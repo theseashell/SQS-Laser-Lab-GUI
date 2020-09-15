@@ -11,6 +11,11 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 import numpy as np
 from time import sleep
 
+from DeviceClasses.Attenuator import AttenuatorStandaTCPIP
+from DeviceClasses.NewportESP301 import newportESP301
+from DeviceClasses.CoboldPC import CoboldPCTCPIP
+from DeviceClasses.LeCroyWavePro import LeCroyWavePro
+
 from ThreadClasses.cpclaserpowerscanThread import cpclaserpowerscanThread
 from ThreadClasses.leclaserpowerscanThread import leclaserpowerscanThread
 from ThreadClasses.cpcstagepositionscanThread import cpcstagepositionscanThread
@@ -807,7 +812,7 @@ class Ui_LazerLabGUI(object):
 
     def retranslateUi(self, LazerLabGUI):
         _translate = QtCore.QCoreApplication.translate
-        LazerLabGUI.setWindowTitle(_translate("LazerLabGUI", "LazerLab GUI 3000"))
+        LazerLabGUI.setWindowTitle(_translate("LazerLabGUI", "SQS LaserLab GUI"))
         self.laserpowergroupBox.setTitle(_translate("LazerLabGUI", "Laser Power"))
         self.newlaserpowerLabel.setText(_translate("LazerLabGUI", "New laser power [%]"))
         self.newlaserpowersetButton.setText(_translate("LazerLabGUI", "Adjust"))
@@ -914,9 +919,17 @@ class Ui_LazerLabGUI(object):
         self.lecstagepositionscanThread.T_lecPBval.connect(self.lecscanprogressProgressBar.setValue)
         self.lecstagepositionscanThread.T_infoTextBrowser.connect(self.infoTextBrowser.append)
 
+        #--------------------------------------------------------------------------------------#
+        #--------------------------DEVICEOBJECTS-----------------------------------------------#
+        #--------------------------------------------------------------------------------------#
+        self.attenuator = AttenuatorStandaTCPIP()
+        self.delaystage = newportESP301()
+
+
     #--------------------------------------------------------------------------------------#
     #--------------------------POWER/DELAY TAB FUNCTIONS-----------------------------------#
     #--------------------------------------------------------------------------------------#
+
 
     #WAVEPLATE
     def connecttowaveplateEvent(self):
@@ -925,6 +938,8 @@ class Ui_LazerLabGUI(object):
             self.infoTextBrowser.append('Trying to connect to waveplate ...')
 
             #<<--function that is connecting to the waveplate
+            self.attenuator.connectToAxis()
+            
             self.iswaveplateconnectedCheckBox.setChecked(True)
             #<<--function that reads current power setting & sets it in the window
 
@@ -947,7 +962,8 @@ class Ui_LazerLabGUI(object):
         try:
             ## inital text for infobox
             self.infoTextBrowser.append(f'Setting laser power to {float(self.newlaserpowerLineEdit.text())} %')
-            #<<--function that changes the laser power
+            newposition = self.attenuator.powerToMotorPosition(float(self.newlaserpowerLineEdit.text()))
+            self.attenuator.moveToPosition(newposition)
             self.laserpowerprogressBar.setValue(float(self.newlaserpowerLineEdit.text()))
         except:
             ## error message for infobox
@@ -958,7 +974,7 @@ class Ui_LazerLabGUI(object):
         try:
             ## initial text for infobox
             self.infoTextBrowser.append('Trying to connect to the stage ...')
-            #<<--function that is connecting to the waveplate
+            self.delaystage.establishConnection()
             self.isstageconnectedCheckBox.setChecked(True)
             #<<--function that reads current stage position & updates stage position field
 
@@ -972,8 +988,7 @@ class Ui_LazerLabGUI(object):
             ## finishing text for infobox
             self.infoTextBrowser.append('Connection to the stage is established.')
             self.connecttostageButton.setEnabled(False)
-
-
+            
         except:
             ## error message for info box
             self.infoTextBrowser.append('Could not connect to waveplate.')
@@ -983,7 +998,7 @@ class Ui_LazerLabGUI(object):
             ## inital text for infobox
             stvalue = float(self.newstagepositionLineEdit.text())
             self.infoTextBrowser.append(f'Setting stage position to {stvalue:.4f} mm')
-            #<<--function that changes the stage position
+            self.delaystage.axisMoveAbsolute(stvalue)
             self.displaycurrentstagepostitionLineEdit.setText(f'{stvalue:.4f}')
 
         except:

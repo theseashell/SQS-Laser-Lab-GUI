@@ -3,10 +3,10 @@ import time
 import sys
 
 class newportESP301:
-    def __init__(self, ipaddress, port, axis):
-        self.ipaddress = ipaddress  # here 192.168.140.200
-        self.port = port            # 10001
-        self.axis = str(int(axis))
+    def __init__(self):
+        self.ipaddress = '192.168.140.200'
+        self.port = 10001
+        self.axis = '1'
         self.cmt = '\r'
         self.connected = False
         self.ismoving = False
@@ -15,11 +15,14 @@ class newportESP301:
         self.timezeroPosition = 0.0
 
     def establishConnection(self):
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        print('Connecting to {} port {}'.format(self.ipaddress, self.port))
-        self.sock.connect((self.ipaddress, self.port))
-        self.connected = True
-        print('Connection established.')
+        try:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            print('Connecting to {} port {}'.format(self.ipaddress, self.port))
+            self.sock.connect((self.ipaddress, self.port))
+            self.connected = True
+            print('Connection established.')
+        except:
+            raise
 
     def closeConnection(self):
         if self.connected == True:
@@ -60,16 +63,19 @@ class newportESP301:
 
 
     def axisMoveAbsolute(self, target):
-        self.sock.sendall((self.axis+'PA{}\r'.format(str(target))).encode())
-        time.sleep(0.1)
-        self.ismoving = True
-        while self.ismoving:
-            motionstatus = self.axisMotionStatus(printt=False)
-            if motionstatus == 1:
-                self.ismoving = False
+        try:
+            self.sock.sendall((self.axis+'PA{}\r'.format(str(target))).encode())
             time.sleep(0.1)
+            self.ismoving = True
+            while self.ismoving:
+                motionstatus = self.axisMotionStatus(printt=False)
+                if motionstatus == 1:
+                    self.ismoving = False
+                time.sleep(0.1)
 
-        print('Finished moving')
+            print('Finished moving')
+        except:
+            raise
 
     def axisMoveRelative(self, target):
         self.sock.sendall((self.axis + 'PR{}\r'.format(str(target))).encode())

@@ -10,7 +10,7 @@ import sys
 #if sys.version_info >= (3,0):
 #    import urllib.parse
 
-from simple_movement import *
+#from simple_movement import *
 
 class AttenuatorStandaTCPIP:
     def __init__(self):
@@ -32,6 +32,7 @@ class AttenuatorStandaTCPIP:
             print('Connection established.')
         except:
             print('Connection is not possible.')
+            raise
 
     def closeConnection(self):
         try:
@@ -44,8 +45,11 @@ class AttenuatorStandaTCPIP:
         return get_position(lib, self.ID)
 
     def moveToPosition(self, position):
-        lib.command_move(self.ID, int(position))
-        lib.command_wait_for_stop(self.ID, 100)
+        try:
+            lib.command_move(self.ID, int(position))
+            lib.command_wait_for_stop(self.ID, 100)
+        except:
+            raise
 
     def powerToMotorPosition(self, power):
         x0 = 1879.10626848
